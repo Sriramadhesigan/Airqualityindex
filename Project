@@ -1,1 +1,82 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+import matplotlib.pyplot as plt
 
+# Load sample air quality data (replace with your actual data)
+# Data should contain features like temperature, humidity, pollutants, etc.
+# and a target variable like AQI (Air Quality Index)
+def load_sample_data():
+    # Generate synthetic data for demonstration
+    np.random.seed(42)
+    n_samples = 1000
+    data = {
+        'temperature': np.random.normal(25, 5, n_samples),
+        'humidity': np.random.normal(60, 15, n_samples),
+        'pm2_5': np.random.lognormal(2, 0.5, n_samples),
+        'pm10': np.random.lognormal(2.2, 0.5, n_samples),
+        'no2': np.random.lognormal(1.8, 0.4, n_samples),
+        'co': np.random.lognormal(0.8, 0.3, n_samples),
+    }
+    
+    # Calculate a simple AQI (simplified for demonstration)
+    df = pd.DataFrame(data)
+    df['aqi'] = (0.3 * df['pm2_5'] + 0.3 * df['pm10'] + 
+                 0.2 * df['no2'] + 0.2 * df['co']) * (1 + df['humidity']/100)
+    
+    return df
+
+# Load and prepare data
+data = load_sample_data()
+print("Sample data:")
+print(data.head())
+
+# Split into features and target
+X = data.drop('aqi', axis=1)
+y = data['aqi']
+
+# Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize and train model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate model
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"\nModel Performance:")
+print(f"Mean Absolute Error: {mae:.2f}")
+print(f"R-squared Score: {r2:.2f}")
+
+# Feature importance
+feature_importance = pd.Series(model.feature_importances_, index=X.columns)
+feature_importance = feature_importance.sort_values(ascending=False)
+print("\nFeature Importance:")
+print(feature_importance)
+
+# Plot feature importance
+plt.figure(figsize=(10, 6))
+feature_importance.plot(kind='bar')
+plt.title('Feature Importance for Air Quality Prediction')
+plt.ylabel('Importance Score')
+plt.tight_layout()
+plt.show()
+
+# Example prediction
+sample_input = pd.DataFrame({
+    'temperature': [28],
+    'humidity': [65],
+    'pm2_5': [35],
+    'pm10': [50],
+    'no2': [20],
+    'co': [1.2]
+})
+
+predicted_aqi = model.predict(sample_input)
+print(f"\nPredicted AQI for sample input: {predicted_aqi[0]:.2f}")
